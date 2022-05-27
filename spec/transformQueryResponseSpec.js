@@ -15,7 +15,7 @@ const fakeRecordAfter = {
 };
 
 const makeFakeRecord = () => {
-  return R.merge(fakeRecordBefore, {});
+  return R.mergeRight(fakeRecordBefore, {});
 };
 
 const fakeQueryResponse  = [makeFakeRecord(), makeFakeRecord()],

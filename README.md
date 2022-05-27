@@ -19,12 +19,12 @@ $ npm test
 
 #### query()
 Make a SQL query in which you expect zero or more results. Returns a promise which
-either resolves to an array containing found records (as objects) or rejects if no records found. 
+either resolves to an array containing found records (as objects) or rejects if no records found.
 
 #### querySafe()
 Same as query but resolves an empty array if no records found.
 
-##### Suggested model usage: 
+##### Suggested model usage:
 ```js
 
 'use strict';
@@ -32,7 +32,7 @@ Same as query but resolves an empty array if no records found.
 const mysql  = require('mysql'),
       config = require('config'),
       dbPool = mysql.createPool(config.mysql);
-    
+
 const DB                  = require('alien-node-mysql-utils')(dbPool),
       validateAccountData = require('../some-validator');
 
@@ -56,7 +56,7 @@ const getAccountsByStatus = status => {
 module.exports = getAccountsByStatus;
 ```
 
-##### Suggested controller usage 
+##### Suggested controller usage
 
 *(using DB.query)*
 
@@ -70,7 +70,7 @@ getAccountsByStatus('active').then(accounts => {
   .catch(err => {
     // handle "No records found" or other errors here
   });
-  
+
 ```
 
 *(using DB.querySafe)*
@@ -85,15 +85,15 @@ getAccountsByStatus('active').then(maybeAccounts => {
   .catch(err => {
     // handle errors here
   });
-  
+
 ```
 
 #### lookup()
 Make a SQL query in which you expect zero or one result. Returns a promise which
-either resolves to an object matching the row schema or rejects if no records found. 
+either resolves to an object matching the row schema or rejects if no records found.
 
 #### lookupSafe()
-Same as lookup, but resolves `undefined` if no records are found. 
+Same as lookup, but resolves `undefined` if no records are found.
 
 ```js
 
@@ -102,7 +102,7 @@ Same as lookup, but resolves `undefined` if no records are found.
 const mysql  = require('mysql'),
       config = require('config'),
       dbPool = mysql.createPool(config.mysql);
-    
+
 const DB                  = require('alien-node-mysql-utils')(dbPool),
       validateAccountData = require('../some-validator');
 
@@ -141,7 +141,7 @@ getAccountById(1234).then(account => {
   .catch(err => {
     // handle "No records found" or other errors here
   });
-  
+
 ```
 
 *(using DB.lookupSafe)*
@@ -157,19 +157,19 @@ getAccountById(1234).then(maybeAccount => {
   .catch(err => {
     // handle errors here
   });
-  
+
 ```
 
 ## Transactions
-This library supports some simple transaction abstractions to play nicely with your promise chains. 
+This library supports some simple transaction abstractions to play nicely with your promise chains.
 
-The three methods you need to care about are : 
+The three methods you need to care about are :
  - DB.beginTransaction()
  - DB.addQueryToTransaction()
  - DB.commit()
- 
-These methods have a unique signature compared to the other methods for querying. Let's break them down: 
- 
+
+These methods have a unique signature compared to the other methods for querying. Let's break them down:
+
 **DB.beginTransaction()** : `() -> Promise(connection)`
 
 This method will use the curried `dbPool` object provided during require...
@@ -179,23 +179,23 @@ const DB = require('alien-node-mysql-utils')(dbPool);
 ```
 
 ... and call the native `getConnection()` on it, then resolve the connection on its promise.
- 
-This connection needs to be provided to the subsequent methods so the transaction knows how to commit and rollback. 
- 
+
+This connection needs to be provided to the subsequent methods so the transaction knows how to commit and rollback.
+
 **DB.addQueryToTransaction()** : `connection -> query -> Promise({ data, connection })`
 
-This method accepts the connection object which you should have gotten from `DB.beginTransaction()`, along with the typical query which you give to 
-any other query method in this library. It behaves like `DB.querySafe()` in that it lets you 
+This method accepts the connection object which you should have gotten from `DB.beginTransaction()`, along with the typical query which you give to
+any other query method in this library. It behaves like `DB.querySafe()` in that it lets you
 deal with all the data scrubbing and null-checks (resolves zero-or-more result sets and all `SELECT` statements
-return an array). 
+return an array).
 
-Please notice that this method returns the connection along with the data, so in the spirit of 
-keeping the unary promise chain data flow in mind, the promise will resolve a single object, 
+Please notice that this method returns the connection along with the data, so in the spirit of
+keeping the unary promise chain data flow in mind, the promise will resolve a single object,
 where the data lives in a `data` property, and the connection on a `connection` property.
 
 **DB.commit()** : `connection`
 
-This method accepts the connection object which you should have gotten from `DB.beginTransaction()`. It simply 
+This method accepts the connection object which you should have gotten from `DB.beginTransaction()`. It simply
 resolves `true` if there are no errors, otherwise it rejects the promise with whatever error may happen to ruin your day.
 
 ##### Suggested wrapper-model usage for transactions
@@ -206,14 +206,14 @@ const DB = require('alien-node-mysql-utils')(dbPool);
 const getUserBalance = id => connection => {
     const query          = 'SELECT balance FROM users WHERE id = ?',
           queryStatement = [query, [id]];
-  
+
     return DB.addQueryToTransaction(connection, queryStatement);
 };
 
 const updateUserBalance = (id, amount) => connection => {
     const query          = 'UPDATE users SET balance = balance + ? WHERE id = ?',
           queryStatement = [query, [amount, id]];
-  
+
     return DB.addQueryToTransaction(connection, queryStatement);
 };
 
@@ -221,7 +221,7 @@ const ensurePositiveTransfer = amount => connection => {
   if (amount > 0) {
     return connection;
   } else {
-      throw { 
+      throw {
         error : new Error('What are you doing?'),
         connection
       };
@@ -231,11 +231,11 @@ const ensurePositiveTransfer = amount => connection => {
 const ensureEnoughMoney = amount => transaction => {
   const data    = transaction.data || [{ balance : 0 }],
         balance = data[0].balance  || 0;
-  
+
   if (amount <= balance) {
     return transaction;
   } else {
-    throw { 
+    throw {
       error      : new Error('Broke ass' ),
       connection : transaction.connection
     };
@@ -262,7 +262,7 @@ DB.beginTransaction()
     exception.connection.rollback();
     logger.error(exception.error);
   });
- 
+
 ```
-## TODO 
+## TODO
  - Make the transform to/from column methods unbiased with decorator injection
